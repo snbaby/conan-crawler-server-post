@@ -76,10 +76,6 @@ public class KafkaConsumer {
 	@Autowired
 	private KafkaTemplate kafkaTemplate;
 
-	public static Map<String, Integer> shopmap = new HashMap<>();
-
-	public static Map<String, Integer> ratemap = new HashMap<>();
-
 	@KafkaListener(topics = { "key-word-scan" })
 	public void keyWordScan(ConsumerRecord<String, String> record)
 			throws InterruptedException, UnsupportedEncodingException {
@@ -156,15 +152,10 @@ public class KafkaConsumer {
 	public void shopScan(ConsumerRecord<String, String> record) {
 		System.out.println("shop-scan-消费--" + record.key());
 		System.out.println("shop-scan-消费--" + record.value());
-		if (shopmap.containsKey(record.key())) {
-			shopmap.put(record.key(), 1 + shopmap.get(record.key()));
-		} else {
-			shopmap.put(record.key(), 0);
-		}
 		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
 		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
 		Spider.create(new TaoBaoShopProcessor()).addUrl(record.value()).setDownloader(phantomDownloader)
-				.addPipeline(collectorPipeline).thread((Runtime.getRuntime().availableProcessors() - 1) << 1).run();
+				.addPipeline(collectorPipeline).thread(1).run();
 		List<ResultItems> resultItemsList = collectorPipeline.getCollected();
 		for (ResultItems resultItems : resultItemsList) {
 			String shopType = resultItems.get("shop_type");
@@ -196,11 +187,6 @@ public class KafkaConsumer {
 	public void rateScan(ConsumerRecord<String, String> record) {
 		System.out.println("rate-scan-消费--" + record.key());
 		System.out.println("rate-scan-消费--" + record.value());
-		if (ratemap.containsKey(record.key())) {
-			ratemap.put(record.key(), 1 + ratemap.get(record.key()));
-		} else {
-			ratemap.put(record.key(), 0);
-		}
 		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
 		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
 		Spider.create(new TaoBaoRateUrlProcessor()).addUrl(record.value()).setDownloader(phantomDownloader)
