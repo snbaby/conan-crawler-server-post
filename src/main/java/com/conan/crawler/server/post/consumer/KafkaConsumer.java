@@ -48,9 +48,9 @@ import us.codecraft.webmagic.pipeline.ResultItemsCollectorPipeline;
 @Component
 public class KafkaConsumer {
 
-	private String phantomJsExePath = "H:\\property\\phantomjs.exe";
+	private String phantomJsExePath = "/opt/phantomjs-2.1.1-linux-x86_64/bin/phantomjs";
 
-	private String crawlJsPath = "H:\\property\\crawl.js";
+	private String crawlJsPath = "/opt/crawl.js";
 
 	@Autowired
 	private KeyWordTbMapper keyWordTbMapper;
