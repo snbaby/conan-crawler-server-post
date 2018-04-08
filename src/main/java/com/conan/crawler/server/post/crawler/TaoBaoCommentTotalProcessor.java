@@ -9,32 +9,40 @@ import us.codecraft.webmagic.selector.Selectable;
 
 public class TaoBaoCommentTotalProcessor implements PageProcessor {
 
+	private Site site = Site.me().setDomain("s.taobao.com").setCharset("GBK")
+			.addHeader("Referer", "http://www.taobao.com/").setRetryTimes(3).setSleepTime(5000);
 	@Override
 	public Site getSite() {
 		// TODO Auto-generated method stub
 		
-		return null;
+		return site;
 	}
 
 	@Override
 	public void process(Page page) {
 		// TODO Auto-generated method stub
 		Html html = page.getHtml();
-		if (html.css("body").toString().contains("jsonp145")) {
-			if (html.css("pre", "text").all().size() != 0) {// 淘宝评论
-				Selectable selectable = html.css("pre", "text");
-				JSONObject jsonObject = JSONObject
-						.fromObject(selectable.toString().replace("jsonp145(", "").replace("})", "}"));
-				page.putField("count", jsonObject.getInt("count"));
-			} else {// 天猫
-				Selectable selectable = html.css("body", "text");
-				JSONObject jsonObject = JSONObject
-						.fromObject(selectable.toString().replace("jsonp145(", "").replace("})", "}"));
-				page.putField("count", jsonObject.getJSONObject("dsr").getInt("rateTotal"));
+		try {
+			if (html.css("body").toString().contains("jsonp145")) {
+				if (html.css("pre", "text").all().size() != 0) {// 淘宝评论
+					Selectable selectable = html.css("pre", "text");
+					JSONObject jsonObject = JSONObject
+							.fromObject(selectable.toString().replace("jsonp145(", "").replace("})", "}"));
+					page.putField("count", jsonObject.getString("count"));
+				} else {// 天猫
+					Selectable selectable = html.css("body", "text");
+					JSONObject jsonObject = JSONObject
+							.fromObject(selectable.toString().replace("jsonp145(", "").replace("})", "}"));
+					page.putField("count", jsonObject.getJSONObject("dsr").getString("rateTotal"));
+				}
+			} else {
+				page.putField("count", "");// 表示未抓取到，需要重新抓取
 			}
-		} else {
-			page.putField("count", "");// 表示未抓取到，需要重新抓取
+		} catch (Exception e) {
+			// TODO: handle exception
+			page.putField("count", "");
 		}
+		
 	}
 
 }

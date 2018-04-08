@@ -3,8 +3,12 @@ package com.conan.crawler.server.post.consumer;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+
+import javax.swing.Spring;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -14,9 +18,11 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.concurrent.ListenableFuture;
 
+import com.conan.crawler.server.post.crawler.TaoBaoCommentTotalProcessor;
 import com.conan.crawler.server.post.crawler.TaoBaoKeyWordProcessor;
 import com.conan.crawler.server.post.crawler.TaoBaoRateUrlProcessor;
 import com.conan.crawler.server.post.crawler.TaoBaoShopProcessor;
+import com.conan.crawler.server.post.entity.CommentTb;
 import com.conan.crawler.server.post.entity.GoodsTb;
 import com.conan.crawler.server.post.entity.KeyWordScanTb;
 import com.conan.crawler.server.post.entity.SellerTb;
@@ -69,6 +75,10 @@ public class KafkaConsumer {
 
 	@Autowired
 	private KafkaTemplate kafkaTemplate;
+	
+	public static Map<String,Integer> shopmap = new HashMap<>();
+	
+	public static Map<String,Integer> ratemap = new HashMap<>();
 
 	@KafkaListener(topics = { "key-word-scan" })
 	public void keyWordScan(ConsumerRecord<String, String> record) throws InterruptedException, UnsupportedEncodingException {
@@ -145,6 +155,11 @@ public class KafkaConsumer {
 	public void shopScan(ConsumerRecord<String, String> record) {
 		System.out.println("shop-scan-消费--" + record.key());
 		System.out.println("shop-scan-消费--" + record.value());
+		if(shopmap.containsKey(record.key())) {
+			shopmap.put(record.key(), 1+shopmap.get(record.key()));
+		}else {
+			shopmap.put(record.key(), 0);
+		}
 		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
 		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
 		Spider.create(new TaoBaoShopProcessor()).addUrl(record.value()).setDownloader(phantomDownloader)
@@ -180,6 +195,11 @@ public class KafkaConsumer {
 	public void rateScan(ConsumerRecord<String, String> record) {
 		System.out.println("rate-scan-消费--" + record.key());
 		System.out.println("rate-scan-消费--" + record.value());
+		if(ratemap.containsKey(record.key())) {
+			ratemap.put(record.key(), 1+ratemap.get(record.key()));
+		}else {
+			ratemap.put(record.key(), 0);
+		}
 		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
 		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
 		Spider.create(new TaoBaoRateUrlProcessor()).addUrl(record.value()).setDownloader(phantomDownloader)
@@ -192,7 +212,6 @@ public class KafkaConsumer {
 				System.out.println("comsumer rateScan start---rate-scan---"+record.key()+"---"+record.value());
 				ListenableFuture future = kafkaTemplate.send("rate-scan", record.key(),record.value());
 				System.out.println("comsumer rateScan start---rate-scan---"+record.key()+"---"+record.value());
-				
 			} else {
 				System.out.println("producer rateScan start---shop-scan---"+record.key()+"---"+rateUrl);
 				ListenableFuture future = kafkaTemplate.send("shop-scan", record.key(),rateUrl);
@@ -202,35 +221,38 @@ public class KafkaConsumer {
 	}
 	
 	@KafkaListener(topics = { "comment-total-scan" })
-	public void commentTotalScan(String commentTotalScanUrl) {
-		System.out.println("comment-total-scan-消费---" + commentTotalScanUrl);
-		/*PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
+	public void commentTotalScan(ConsumerRecord<String, String> record) {
+		System.out.println("comment-total-scan-消费--" + record.key()+ "-------"+record.value());
+		if(shopmap.containsKey(record.key())) {
+			shopmap.put(record.key(), 1+shopmap.get(record.key()));
+		}else {
+			shopmap.put(record.key(), 0);
+		}
+		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
 		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
-		Spider.create(new TaoBaoCommentTotalProcessor()).addUrl(commentTotalScanUrl).setDownloader(phantomDownloader)
-				.addPipeline(collectorPipeline).thread((Runtime.getRuntime().availableProcessors() - 1) << 1).run();
+		Spider.create(new TaoBaoCommentTotalProcessor()).addUrl(record.value()).setDownloader(phantomDownloader)
+				.addPipeline(collectorPipeline).thread(1).run();
 		List<ResultItems> resultItemsList = collectorPipeline.getCollected();
 		for (ResultItems resultItems : resultItemsList) {
 			String count = resultItems.get("count");
 			if (StringUtils.isEmpty(count)) {// 重新扫描此URL
 				//TO-DO 记录此事件
-				ListenableFuture future = kafkaTemplate.send("comment-total-scan", commentTotalScanUrl);
-				future.addCallback(
-						o -> System.out.println("comment-total-scan-消息发送成功：" + commentTotalScanUrl),
-						throwable -> System.out
-								.println("comment-total-scan-消息发送失败：" + commentTotalScanUrl));
+				System.out.println("produce commentTotalScan start---comment-total-scan---"+record.key()+"---"+record.value());
+				ListenableFuture future = kafkaTemplate.send("comment-total-scan", record.key(),record.value());
+				System.out.println("produce commentTotalScan start---comment-total-scan---"+record.key()+"---"+record.value());
 			} else {
 				//TO-DO 把此数据记录在表中
 				CommentTb commentTb = new  CommentTb();
 				commentTb.setId(UUID.randomUUID().toString());
-				commentTb.setCommentCount(Integer.parseInt(count));
-				commentTb.setGoodsId(Utils.findGoodsIdByCommentTotalUrl(commentTotalScanUrl));
+				commentTb.setItemId(record.key());
+				commentTb.setTotal(count);
 				commentTb.setCrtUser("admin");
 				commentTb.setCrtTime(new Date());
 				commentTb.setCrtIp("127.0.0.1");
 				commentTb.setStatus("0");
 				commentTbMapper.insert(commentTb);
 			}
-		}*/
+		}
 	}
 	
 	@KafkaListener(topics = { "comment-detail-scan" })

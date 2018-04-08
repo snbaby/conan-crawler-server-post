@@ -41,12 +41,12 @@
 			enableUpdateByExample="false" enableDeleteByExample="false"
 			enableSelectByExample="false" selectByExampleQueryId="false">
 		</table> -->
-		<table schema="conan_crawler" tableName="shop_scan_tb"
+		<!--<table schema="conan_crawler" tableName="shop_scan_tb"
 			domainObjectName="ShopScanTb" enableCountByExample="false"
 			enableUpdateByExample="false" enableDeleteByExample="false"
 			enableSelectByExample="false" selectByExampleQueryId="false">
-		</table>
-		<!-- <table schema="conan_crawler" tableName="comment_tb"
+		</table> -->
+		 <table schema="conan_crawler" tableName="comment_tb"
 			domainObjectName="CommentTb" enableCountByExample="false"
 			enableUpdateByExample="false" enableDeleteByExample="false"
 			enableSelectByExample="false" selectByExampleQueryId="false">
@@ -55,6 +55,6 @@
 			domainObjectName="CommentScanTb" enableCountByExample="false"
 			enableUpdateByExample="false" enableDeleteByExample="false"
 			enableSelectByExample="false" selectByExampleQueryId="false">
-		</table> -->
+		</table>
 	</context>
 </generatorConfiguration>
