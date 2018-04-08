@@ -21,7 +21,7 @@
 		<javaClientGenerator targetPackage="com.conan.crawler.server.post.mapper"
 			targetProject="conan-crawler-server-post/src/main/java" type="XMLMAPPER">
 		</javaClientGenerator>
-		<table schema="conan_crawler" tableName="key_word_tb"
+		<!-- <table schema="conan_crawler" tableName="key_word_tb"
 			domainObjectName="KeyWordTb" enableCountByExample="false"
 			enableUpdateByExample="false" enableDeleteByExample="false"
 			enableSelectByExample="false" selectByExampleQueryId="false">
@@ -40,13 +40,13 @@
 			domainObjectName="SellerTb" enableCountByExample="false"
 			enableUpdateByExample="false" enableDeleteByExample="false"
 			enableSelectByExample="false" selectByExampleQueryId="false">
-		</table>
+		</table> -->
 		<table schema="conan_crawler" tableName="shop_scan_tb"
 			domainObjectName="ShopScanTb" enableCountByExample="false"
 			enableUpdateByExample="false" enableDeleteByExample="false"
 			enableSelectByExample="false" selectByExampleQueryId="false">
 		</table>
-		<table schema="conan_crawler" tableName="comment_tb"
+		<!-- <table schema="conan_crawler" tableName="comment_tb"
 			domainObjectName="CommentTb" enableCountByExample="false"
 			enableUpdateByExample="false" enableDeleteByExample="false"
 			enableSelectByExample="false" selectByExampleQueryId="false">
@@ -55,6 +55,6 @@
 			domainObjectName="CommentScanTb" enableCountByExample="false"
 			enableUpdateByExample="false" enableDeleteByExample="false"
 			enableSelectByExample="false" selectByExampleQueryId="false">
-		</table>
+		</table> -->
 	</context>
 </generatorConfiguration>

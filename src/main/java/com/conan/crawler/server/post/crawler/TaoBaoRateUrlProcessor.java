@@ -22,10 +22,17 @@ public class TaoBaoRateUrlProcessor implements PageProcessor {
 		// TODO Auto-generated method stub
 		Html html = page.getHtml();
 		Selectable selectable= html.css("[href~=rate.taobao.com]","href");
-		if(selectable.all().size()==0) {
-			page.putField("rateUrl", "");
-		}else {
+		
+		if(selectable.all().size()>0) {
 			page.putField("rateUrl", "https:"+selectable.all().get(0));
+		}else {
+			Selectable selectableTmall= html.css("#dsr-ratelink","value");
+			if(selectableTmall.all().size()>0) {
+				page.putField("rateUrl", "https:"+selectableTmall.all().get(0));
+			}else {
+				page.putField("rateUrl", "");
+			}
+			
 		}
 	}
 }

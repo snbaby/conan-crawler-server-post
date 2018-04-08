@@ -15,9 +15,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.concurrent.ListenableFuture;
 
 import com.conan.crawler.server.post.crawler.TaoBaoKeyWordProcessor;
+import com.conan.crawler.server.post.crawler.TaoBaoRateUrlProcessor;
+import com.conan.crawler.server.post.crawler.TaoBaoShopProcessor;
 import com.conan.crawler.server.post.entity.GoodsTb;
 import com.conan.crawler.server.post.entity.KeyWordScanTb;
 import com.conan.crawler.server.post.entity.SellerTb;
+import com.conan.crawler.server.post.entity.ShopScanTb;
 import com.conan.crawler.server.post.mapper.CommentScanTbMapper;
 import com.conan.crawler.server.post.mapper.CommentTbMapper;
 import com.conan.crawler.server.post.mapper.GoodsTbMapper;
@@ -139,24 +142,20 @@ public class KafkaConsumer {
 	}
 
 	@KafkaListener(topics = { "shop-scan" })
-	public void shopScan(String rateUrl) {
-		System.out.println("shop-scan-消费---" + rateUrl);
-		/*PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
+	public void shopScan(ConsumerRecord<String, String> record) {
+		System.out.println("shop-scan-消费--" + record.key());
+		System.out.println("shop-scan-消费--" + record.value());
+		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
 		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
-		Spider.create(new TaoBaoShopProcessor()).addUrl(rateUrl).setDownloader(phantomDownloader)
+		Spider.create(new TaoBaoShopProcessor()).addUrl(record.value()).setDownloader(phantomDownloader)
 				.addPipeline(collectorPipeline).thread((Runtime.getRuntime().availableProcessors() - 1) << 1).run();
-		System.out.println("start---------------shop-scan-消费---" + rateUrl);
 		List<ResultItems> resultItemsList = collectorPipeline.getCollected();
-		System.out.println("middle---------------shop-scan-消费---resultItemsList" + resultItemsList.size());
 		for (ResultItems resultItems : resultItemsList) {
 			String shopType = resultItems.get("shop_type");
 			if (shopType.equals("-1")) {// 失败，继续进行扫描
-				System.out.println("-1-1-1-1-1-1-1-1-1-1-1" );
-				ListenableFuture future = kafkaTemplate.send("shop-scan", rateUrl);
-				future.addCallback(
-						o -> System.out.println("shop-scan-消息发送成功：" + rateUrl),
-						throwable -> System.out
-								.println("shop-scan消息发送失败：" + rateUrl));
+				System.out.println("producer shopScan start---shop-scan---"+record.key()+"---"+record.value());
+				ListenableFuture future = kafkaTemplate.send("shop-scan", record.key(),record.value());
+				System.out.println("producer shopScan start---shop-scan---"+record.key()+"---"+record.value());
 			}else {
 				ShopScanTb shopScanTb = new ShopScanTb();
 				shopScanTb.setId(UUID.randomUUID().toString());
@@ -167,6 +166,7 @@ public class KafkaConsumer {
 				shopScanTb.setDsrDesc(resultItems.get("dsr_desc"));
 				shopScanTb.setDsrLogi(resultItems.get("dsr_logi"));
 				shopScanTb.setDsrServ(resultItems.get("dsr_serv"));
+				shopScanTb.setUserNumberId(record.key());
 				shopScanTb.setCrtUser("admin");
 				shopScanTb.setCrtTime(new Date());
 				shopScanTb.setCrtIp("127.0.0.1");
@@ -174,34 +174,31 @@ public class KafkaConsumer {
 				shopScanTbMapper.insert(shopScanTb);
 			}
 		}
-		System.out.println("stop---------------shop-scan-消费---" + rateUrl);*/
 	}
 	
 	@KafkaListener(topics = { "rate-scan" })
-	public void rateScan(String rateScanUrl) {
-		System.out.println("rate-scan-消费---" + rateScanUrl);
-		/*PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
+	public void rateScan(ConsumerRecord<String, String> record) {
+		System.out.println("rate-scan-消费--" + record.key());
+		System.out.println("rate-scan-消费--" + record.value());
+		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
 		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
-		Spider.create(new TaoBaoRateUrlProcessor()).addUrl(rateScanUrl).setDownloader(phantomDownloader)
-				.addPipeline(collectorPipeline).thread((Runtime.getRuntime().availableProcessors() - 1) << 1).run();
+		Spider.create(new TaoBaoRateUrlProcessor()).addUrl(record.value()).setDownloader(phantomDownloader)
+				.addPipeline(collectorPipeline).thread(1).run();
 		List<ResultItems> resultItemsList = collectorPipeline.getCollected();
 		for (ResultItems resultItems : resultItemsList) {
 			String rateUrl = resultItems.get("rateUrl");
 			if (StringUtils.isEmpty(rateUrl)) {// 重新扫描此URL
 				//TO-DO 记录此事件
-				ListenableFuture future = kafkaTemplate.send("rate-scan", rateScanUrl);
-				future.addCallback(
-						o -> System.out.println("rate-scan-消息发送成功：" + resultItems.get("url").toString()),
-						throwable -> System.out
-								.println("rate-scan消息发送失败：" + resultItems.get("url").toString()));
+				System.out.println("comsumer rateScan start---rate-scan---"+record.key()+"---"+record.value());
+				ListenableFuture future = kafkaTemplate.send("rate-scan", record.key(),record.value());
+				System.out.println("comsumer rateScan start---rate-scan---"+record.key()+"---"+record.value());
+				
 			} else {
-				ListenableFuture future = kafkaTemplate.send("shop-scan", rateUrl);
-				future.addCallback(
-						o -> System.out.println("shop-scan-消息发送成功：" + rateUrl),
-						throwable -> System.out
-								.println("shop-scan消息发送失败：" + rateUrl));
+				System.out.println("producer rateScan start---shop-scan---"+record.key()+"---"+rateUrl);
+				ListenableFuture future = kafkaTemplate.send("shop-scan", record.key(),rateUrl);
+				System.out.println("producer rateScan start---shop-scan---"+record.key()+"---"+rateUrl);
 			}
-		}*/
+		}
 	}
 	
 	@KafkaListener(topics = { "comment-total-scan" })
