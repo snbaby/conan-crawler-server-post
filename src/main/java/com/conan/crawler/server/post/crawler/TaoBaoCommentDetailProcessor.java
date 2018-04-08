@@ -15,12 +15,14 @@ import us.codecraft.webmagic.selector.Html;
 import us.codecraft.webmagic.selector.Selectable;
 
 public class TaoBaoCommentDetailProcessor implements PageProcessor {
+	private Site site = Site.me().setDomain("s.taobao.com").setCharset("GBK")
+			.addHeader("Referer", "http://www.taobao.com/").setRetryTimes(3).setSleepTime(5000);
 
 	@Override
 	public Site getSite() {
 		// TODO Auto-generated method stub
 
-		return null;
+		return site;
 	}
 
 	@Override

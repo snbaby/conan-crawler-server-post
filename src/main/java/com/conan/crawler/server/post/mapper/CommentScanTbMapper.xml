@@ -62,6 +62,10 @@
       #{firstReviewTime,jdbcType=VARCHAR}, #{reviewContent,jdbcType=VARCHAR}, #{isSuperVip,jdbcType=VARCHAR}, 
       #{buyerStar,jdbcType=VARCHAR}, #{crtTime,jdbcType=TIMESTAMP}, #{crtUser,jdbcType=VARCHAR}, 
       #{crtIp,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR})
+     ON DUPLICATE KEY UPDATE
+     crt_user = #{crtUser,jdbcType=VARCHAR},
+     crt_time = #{crtTime,jdbcType=TIMESTAMP},
+     crt_ip = #{crtIp,jdbcType=VARCHAR}
   </insert>
   <insert id="insertSelective" parameterType="com.conan.crawler.server.post.entity.CommentScanTb">
     <!--
