@@ -7,30 +7,24 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.concurrent.ListenableFuture;
 
-import com.conan.crawler.server.post.crawler.TaoBaoCommentDetailProcessor;
-import com.conan.crawler.server.post.crawler.TaoBaoCommentTotalProcessor;
 import com.conan.crawler.server.post.crawler.TaoBaoKeyWordProcessor;
-import com.conan.crawler.server.post.crawler.TaoBaoRateUrlProcessor;
-import com.conan.crawler.server.post.crawler.TaoBaoShopProcessor;
-import com.conan.crawler.server.post.entity.CommentScanTb;
-import com.conan.crawler.server.post.entity.CommentTb;
 import com.conan.crawler.server.post.entity.GoodsTb;
 import com.conan.crawler.server.post.entity.KeyWordScanTb;
-import com.conan.crawler.server.post.entity.ShopScanTb;
-import com.conan.crawler.server.post.entity.ShopTb;
+import com.conan.crawler.server.post.entity.SellerTb;
 import com.conan.crawler.server.post.mapper.CommentScanTbMapper;
 import com.conan.crawler.server.post.mapper.CommentTbMapper;
 import com.conan.crawler.server.post.mapper.GoodsTbMapper;
 import com.conan.crawler.server.post.mapper.KeyWordScanTbMapper;
 import com.conan.crawler.server.post.mapper.KeyWordTbMapper;
+import com.conan.crawler.server.post.mapper.SellerTbMapper;
 import com.conan.crawler.server.post.mapper.ShopScanTbMapper;
-import com.conan.crawler.server.post.mapper.ShopTbMapper;
 import com.conan.crawler.server.post.util.Utils;
 
 import us.codecraft.webmagic.ResultItems;
@@ -59,7 +53,7 @@ public class KafkaConsumer {
 	private GoodsTbMapper goodsTbMapper;
 
 	@Autowired
-	private ShopTbMapper shopTbMapper;
+	private SellerTbMapper sellerTbMapper;
 	
 	@Autowired
 	private ShopScanTbMapper shopScanTbMapper;
@@ -74,64 +68,69 @@ public class KafkaConsumer {
 	private KafkaTemplate kafkaTemplate;
 
 	@KafkaListener(topics = { "key-word-scan" })
-	public void keyWordScan(String keyWordScanUrl) throws InterruptedException, UnsupportedEncodingException {
-		System.out.println("key-word-scan-消费--" + keyWordScanUrl);
+	public void keyWordScan(ConsumerRecord<String, String> record) throws InterruptedException, UnsupportedEncodingException {
+		System.out.println("key-word-scan-消费--" + record.key());
+		System.out.println("key-word-scan-消费--" + record.value());
 		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
 		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
-		Spider.create(new TaoBaoKeyWordProcessor()).addUrl(keyWordScanUrl).setDownloader(phantomDownloader)
-				.addPipeline(collectorPipeline).thread((Runtime.getRuntime().availableProcessors() - 1) << 1).run();
+		Spider.create(new TaoBaoKeyWordProcessor()).addUrl(record.value()).setDownloader(phantomDownloader)
+				.addPipeline(collectorPipeline).thread(1).run();
 		List<ResultItems> resultItemsList = collectorPipeline.getCollected();
 		for (ResultItems resultItems : resultItemsList) {
 			if ((boolean) resultItems.get("pageExist")) {// 判断当前页面是否存在
 				List<String> resultList = new ArrayList<>();
 				resultList = resultItems.get("result");
 				if (resultList.isEmpty()) {// 没有获取到数据需要重新获取
-					ListenableFuture future = kafkaTemplate.send("key-word-scan", resultItems.get("url").toString());
-					future.addCallback(
-							o -> System.out.println("key-word-scan-消息发送成功：" + resultItems.get("url").toString()),
-							throwable -> System.out
-									.println("key-word-scan消息发送失败：" + resultItems.get("url").toString()));
+					System.out.println("comsumer start---key-word-scan---"+record.key()+"---"+record.value());
+					ListenableFuture future = kafkaTemplate.send("key-word-scan", record.key(),record.value());
+					System.out.println("comsumer end---key-word-scan---"+record.key()+"---"+record.value());
 				} else {
 					for (String resultStr : resultList) {
-						String shopName = Utils.findShopName(resultStr);
-						String shopId = Utils.findShopId(resultStr);
+						String itemId = Utils.findItemId(resultStr);
+						String itemTitle = Utils.findItemTitle(resultStr);
+						String userNumberId = Utils.findUserNumberId(resultStr);
 						String shopType = resultStr.contains("icon-service-tianmao") ? "0" : "1";// 0天猫 1淘宝
-						String goodsId = Utils.findGoodsId(resultStr);
-						if (!StringUtils.isEmpty(shopName)) {// shopName为空表示为广告商品
+						
+						if (!StringUtils.isEmpty(Utils.findShopName(resultStr))) {// shopName为空表示为广告商品
 																// 白名单过滤
 							KeyWordScanTb keyWordScanTb = new KeyWordScanTb();
 							keyWordScanTb.setId(UUID.randomUUID().toString());
-							keyWordScanTb.setKeyWord(Utils.findKeyWordByUrl(keyWordScanUrl));
-							keyWordScanTb.setShopName(shopName);
-							keyWordScanTb.setShopId(shopId);
-							keyWordScanTb.setGoodsId(goodsId);
+							keyWordScanTb.setKeyWord(record.key());
+							keyWordScanTb.setItemId(itemId);
+							keyWordScanTb.setItemTitle(itemTitle);
+							keyWordScanTb.setUserNumberId(userNumberId);
+							keyWordScanTb.setShopType(shopType);
+							
 							keyWordScanTb.setCrtUser("admin");
 							keyWordScanTb.setCrtTime(new Date());
 							keyWordScanTb.setCrtIp("127.0.0.1");
 							keyWordScanTb.setStatus("0");
-							keyWordScanTb.setShopType(shopType);
 							keyWordScanTbMapper.insert(keyWordScanTb);
 
 							GoodsTb goodsTb = new GoodsTb();
 							goodsTb.setId(UUID.randomUUID().toString());
-							goodsTb.setShopId(shopId);
-							goodsTb.setGoodsId(goodsId);
+							goodsTb.setItemId(itemId);
+							goodsTb.setItemTitle(itemTitle);
+							goodsTb.setUserNumberId(userNumberId);
+							goodsTb.setShopType(shopType);
+							
 							goodsTb.setCrtUser("admin");
 							goodsTb.setCrtTime(new Date());
 							goodsTb.setCrtIp("127.0.0.1");
 							goodsTb.setStatus("0");
 							goodsTbMapper.insert(goodsTb);
 
-							ShopTb shopTb = new ShopTb();
-							shopTb.setId(UUID.randomUUID().toString());
-							shopTb.setShopName(shopName);
-							shopTb.setShopId(shopId);
-							shopTb.setCrtUser("admin");
-							shopTb.setCrtTime(new Date());
-							shopTb.setCrtIp("127.0.0.1");
-							shopTb.setStatus("0");
-							shopTb.setShopType(shopType);
-							shopTbMapper.insert(shopTb);
+							SellerTb sellerTb = new SellerTb();
+							sellerTb.setId(UUID.randomUUID().toString());
+							sellerTb.setUserNumberId(userNumberId);
+							sellerTb.setShopType(shopType);
+							
+							sellerTb.setCrtUser("admin");
+							sellerTb.setCrtTime(new Date());
+							sellerTb.setCrtIp("127.0.0.1");
+							sellerTb.setStatus("0");
+							
+							sellerTbMapper.insert(sellerTb);
 						}
 					}
 				}
@@ -142,7 +141,7 @@ public class KafkaConsumer {
 	@KafkaListener(topics = { "shop-scan" })
 	public void shopScan(String rateUrl) {
 		System.out.println("shop-scan-消费---" + rateUrl);
-		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
+		/*PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
 		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
 		Spider.create(new TaoBaoShopProcessor()).addUrl(rateUrl).setDownloader(phantomDownloader)
 				.addPipeline(collectorPipeline).thread((Runtime.getRuntime().availableProcessors() - 1) << 1).run();
@@ -175,13 +174,13 @@ public class KafkaConsumer {
 				shopScanTbMapper.insert(shopScanTb);
 			}
 		}
-		System.out.println("stop---------------shop-scan-消费---" + rateUrl);
+		System.out.println("stop---------------shop-scan-消费---" + rateUrl);*/
 	}
 	
 	@KafkaListener(topics = { "rate-scan" })
 	public void rateScan(String rateScanUrl) {
 		System.out.println("rate-scan-消费---" + rateScanUrl);
-		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
+		/*PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
 		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
 		Spider.create(new TaoBaoRateUrlProcessor()).addUrl(rateScanUrl).setDownloader(phantomDownloader)
 				.addPipeline(collectorPipeline).thread((Runtime.getRuntime().availableProcessors() - 1) << 1).run();
@@ -202,13 +201,13 @@ public class KafkaConsumer {
 						throwable -> System.out
 								.println("shop-scan消息发送失败：" + rateUrl));
 			}
-		}
+		}*/
 	}
 	
 	@KafkaListener(topics = { "comment-total-scan" })
 	public void commentTotalScan(String commentTotalScanUrl) {
 		System.out.println("comment-total-scan-消费---" + commentTotalScanUrl);
-		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
+		/*PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
 		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
 		Spider.create(new TaoBaoCommentTotalProcessor()).addUrl(commentTotalScanUrl).setDownloader(phantomDownloader)
 				.addPipeline(collectorPipeline).thread((Runtime.getRuntime().availableProcessors() - 1) << 1).run();
@@ -234,13 +233,13 @@ public class KafkaConsumer {
 				commentTb.setStatus("0");
 				commentTbMapper.insert(commentTb);
 			}
-		}
+		}*/
 	}
 	
 	@KafkaListener(topics = { "comment-detail-scan" })
 	public void commentDetailScan(String commentDetailScanUrl) {
 		System.out.println("comment-detail-scan-消费---" + commentDetailScanUrl);
-		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
+		/*PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
 		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
 		Spider.create(new TaoBaoCommentDetailProcessor()).addUrl(commentDetailScanUrl).setDownloader(phantomDownloader)
 				.addPipeline(collectorPipeline).thread((Runtime.getRuntime().availableProcessors() - 1) << 1).run();
@@ -267,7 +266,7 @@ public class KafkaConsumer {
 					commentScanTbMapper.insert(commentScanTb);
 				}
 			}
-		}
+		}*/
 	}
 
 }

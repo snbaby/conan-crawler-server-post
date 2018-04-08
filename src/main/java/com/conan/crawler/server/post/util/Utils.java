@@ -12,18 +12,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Utils {
-
-	/**
-	 * 获取指定HTML标签的指定属性的值
-	 * 
-	 * @param source
-	 *            要匹配的源文本
-	 * @param element
-	 *            标签名称
-	 * @param attr
-	 *            标签的属性名称
-	 * @return 属性值列表
-	 */
 	public static String findShopName(String source) {
 		String reg = "(?<=data-nick\\=\").*?(?=\")";
 		Matcher m = Pattern.compile(reg).matcher(source);
@@ -33,18 +21,7 @@ public class Utils {
 		return "";
 	}
 
-	/**
-	 * 获取指定HTML标签的指定属性的值
-	 * 
-	 * @param source
-	 *            要匹配的源文本
-	 * @param element
-	 *            标签名称
-	 * @param attr
-	 *            标签的属性名称
-	 * @return 属性值列表
-	 */
-	public static String findShopId(String source) {
+	public static String findUserNumberId(String source) {
 		String reg = "(?<=userid\\=\").*?(?=\")";
 		Matcher m = Pattern.compile(reg).matcher(source);
 		while (m.find()) {
@@ -52,20 +29,16 @@ public class Utils {
 		}
 		return "";
 	}
-
-	/**
-	 * 获取指定HTML标签的指定属性的值
-	 * 
-	 * @param source
-	 *            要匹配的源文本
-	 * @param element
-	 *            标签名称
-	 * @param attr
-	 *            标签的属性名称
-	 * @return 属性值列表
-	 */
-	public static String findGoodsId(String source) {
+	public static String findItemId(String source) {
 		String reg = "(?<=data-nid\\=\").*?(?=\")";
+		Matcher m = Pattern.compile(reg).matcher(source);
+		while (m.find()) {
+			return m.group().trim();
+		}
+		return "";
+	}
+	public static String findItemTitle(String source) {
+		String reg = "(?<=alt\\=\").*?(?=\")";
 		Matcher m = Pattern.compile(reg).matcher(source);
 		while (m.find()) {
 			return m.group().trim();
