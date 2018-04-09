@@ -3,9 +3,7 @@ package com.conan.crawler.server.post.consumer;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
@@ -19,7 +17,6 @@ import org.springframework.util.concurrent.ListenableFuture;
 import com.conan.crawler.server.post.crawler.TaoBaoCommentDetailProcessor;
 import com.conan.crawler.server.post.crawler.TaoBaoCommentTotalProcessor;
 import com.conan.crawler.server.post.crawler.TaoBaoKeyWordProcessor;
-import com.conan.crawler.server.post.crawler.TaoBaoRateUrlProcessor;
 import com.conan.crawler.server.post.crawler.TaoBaoShopProcessor;
 import com.conan.crawler.server.post.entity.CommentScanTb;
 import com.conan.crawler.server.post.entity.CommentTb;
@@ -113,7 +110,7 @@ public class KafkaConsumer {
 
 							keyWordScanTb.setCrtUser("admin");
 							keyWordScanTb.setCrtTime(new Date());
-							keyWordScanTb.setCrtIp("127.0.0.1");
+							keyWordScanTb.setCrtIp(Utils.getIp());
 							keyWordScanTb.setStatus("0");
 							keyWordScanTbMapper.insert(keyWordScanTb);
 
@@ -126,7 +123,7 @@ public class KafkaConsumer {
 
 							goodsTb.setCrtUser("admin");
 							goodsTb.setCrtTime(new Date());
-							goodsTb.setCrtIp("127.0.0.1");
+							goodsTb.setCrtIp(Utils.getIp());
 							goodsTb.setStatus("0");
 							goodsTbMapper.insert(goodsTb);
 
@@ -137,7 +134,7 @@ public class KafkaConsumer {
 
 							sellerTb.setCrtUser("admin");
 							sellerTb.setCrtTime(new Date());
-							sellerTb.setCrtIp("127.0.0.1");
+							sellerTb.setCrtIp(Utils.getIp());
 							sellerTb.setStatus("0");
 
 							sellerTbMapper.insert(sellerTb);
@@ -176,33 +173,9 @@ public class KafkaConsumer {
 				shopScanTb.setUserNumberId(record.key());
 				shopScanTb.setCrtUser("admin");
 				shopScanTb.setCrtTime(new Date());
-				shopScanTb.setCrtIp("127.0.0.1");
+				shopScanTb.setCrtIp(Utils.getIp());
 				shopScanTb.setStatus("0");
 				shopScanTbMapper.insert(shopScanTb);
-			}
-		}
-	}
-
-	@KafkaListener(topics = { "rate-scan" })
-	public void rateScan(ConsumerRecord<String, String> record) {
-		System.out.println("rate-scan-消费--" + record.key());
-		System.out.println("rate-scan-消费--" + record.value());
-		PhantomJSDownloader phantomDownloader = new PhantomJSDownloader(phantomJsExePath, crawlJsPath).setRetryNum(3);
-		CollectorPipeline<ResultItems> collectorPipeline = new ResultItemsCollectorPipeline();
-		Spider.create(new TaoBaoRateUrlProcessor()).addUrl(record.value()).setDownloader(phantomDownloader)
-				.addPipeline(collectorPipeline).thread(1).run();
-		List<ResultItems> resultItemsList = collectorPipeline.getCollected();
-		for (ResultItems resultItems : resultItemsList) {
-			String rateUrl = resultItems.get("rateUrl");
-			if (StringUtils.isEmpty(rateUrl)) {// 重新扫描此URL
-				// TO-DO 记录此事件
-				System.out.println("comsumer rateScan start---rate-scan---" + record.key() + "---" + record.value());
-				ListenableFuture future = kafkaTemplate.send("rate-scan", record.key(), record.value());
-				System.out.println("comsumer rateScan start---rate-scan---" + record.key() + "---" + record.value());
-			} else {
-				System.out.println("producer rateScan start---shop-scan---" + record.key() + "---" + rateUrl);
-				ListenableFuture future = kafkaTemplate.send("shop-scan", record.key(), rateUrl);
-				System.out.println("producer rateScan start---shop-scan---" + record.key() + "---" + rateUrl);
 			}
 		}
 	}
@@ -232,7 +205,7 @@ public class KafkaConsumer {
 				commentTb.setTotal(count);
 				commentTb.setCrtUser("admin");
 				commentTb.setCrtTime(new Date());
-				commentTb.setCrtIp("127.0.0.1");
+				commentTb.setCrtIp(Utils.getIp());
 				commentTb.setStatus("0");
 				commentTbMapper.insert(commentTb);
 			}
@@ -263,7 +236,7 @@ public class KafkaConsumer {
 					commentScanTb.setItemId(record.key());
 					commentScanTb.setCrtUser("admin");
 					commentScanTb.setCrtTime(new Date());
-					commentScanTb.setCrtIp("127.0.0.1");
+					commentScanTb.setCrtIp(Utils.getIp());
 					commentScanTb.setStatus("0");
 					commentScanTbMapper.insert(commentScanTb);
 				}

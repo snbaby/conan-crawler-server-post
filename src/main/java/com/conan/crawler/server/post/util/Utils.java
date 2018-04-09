@@ -1,19 +1,15 @@
 package com.conan.crawler.server.post.util;
 
 import java.io.UnsupportedEncodingException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.URLDecoder;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.Enumeration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -165,5 +161,27 @@ public class Utils {
 			return m.group().trim();
 		}
 		return "";
+	}
+	
+	public static String getIp() {
+		try {
+			String ipString = "";
+			Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();
+			InetAddress ip = null;
+			while (allNetInterfaces.hasMoreElements()) {
+				NetworkInterface netInterface = (NetworkInterface) allNetInterfaces.nextElement();
+				Enumeration<InetAddress> addresses = netInterface.getInetAddresses();
+				while (addresses.hasMoreElements()) {
+					ip = (InetAddress) addresses.nextElement();
+					if (ip != null && ip instanceof Inet4Address && !ip.getHostAddress().equals("127.0.0.1")) {
+						return ip.getHostAddress();
+					}
+				}
+			}
+			return ipString;
+		} catch (Exception e) {
+			// TODO: handle exception
+			return "127.0.0.1";
+		}
 	}
 }
