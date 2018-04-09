@@ -65,10 +65,6 @@
      crt_user = #{crtUser,jdbcType=VARCHAR},
      crt_time = #{crtTime,jdbcType=TIMESTAMP},
      crt_ip = #{crtIp,jdbcType=VARCHAR}
-     ON DUPLICATE KEY UPDATE
-     crt_user = #{crtUser,jdbcType=VARCHAR},
-     crt_time = #{crtTime,jdbcType=TIMESTAMP},
-     crt_ip = #{crtIp,jdbcType=VARCHAR}
   </insert>
   <insert id="insertSelective" parameterType="com.conan.crawler.server.post.entity.KeyWordScanTb">
     <!--
