@@ -228,7 +228,7 @@ public class KafkaConsumer {
 				ListenableFuture future = kafkaTemplate.send("comment-detail-scan", record.key(), record.value());
 				System.out.println("produce commentDetailScan end---comment-detail-scan---" + record.key() + "---"
 						+ record.value());
-			} else {
+			} else if (antiCrawler.equals("0")) {
 				// TO-DO 把此数据记录在表中
 				List<CommentScanTb> commentScanTbList = resultItems.get("commentScanTbList");
 				for (CommentScanTb commentScanTb : commentScanTbList) {
