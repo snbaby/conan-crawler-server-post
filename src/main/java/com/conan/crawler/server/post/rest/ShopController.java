@@ -47,9 +47,6 @@ public class ShopController {
 	@Autowired
 	private ShopScanTbMapper shopScanTbMapper;
 
-	@Value("${conan.url.middleware}")
-	private String middlewareUrl;
-
 	@RequestMapping(value = "scan", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<ResponseResult> postShopScanStart(@RequestParam("id") String id,
