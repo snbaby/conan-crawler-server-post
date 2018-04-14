@@ -7,17 +7,6 @@ spring:
     username : root  
     password : guo@dong  
     driverClassName : com.mysql.jdbc.Driver
-  kafka:
-    producer:
-      bootstrap-servers: 118.24.173.247:9092
-    consumer:
-      enable-auto-commit: true
-      group-id: applog
-      auto-offset-reset: latest
-      bootstrap-servers: 118.24.173.247:9092
-      properties:
-        session.timeout.ms: 60000
-          
     
 logging:
     path: ../log-post
