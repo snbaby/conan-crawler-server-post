@@ -72,7 +72,7 @@ public class ShopController {
 			String shopType = resultItems.get("shop_type");
 			if (shopType.equals("-1")) {// 失败，继续进行扫描
 				//异常处理
-				SellerTb sellerTb = sellerTbMapper.selectByPrimaryKey(map.get("key"));
+				SellerTb sellerTb = sellerTbMapper.selectByPrimaryKey(map.get("id"));
 				sellerTb.setStatus("-1");
 				sellerTbMapper.updateByPrimaryKey(sellerTb);
 			} else {
@@ -91,7 +91,7 @@ public class ShopController {
 				shopScanTb.setCrtIp(Utils.getIp());
 				shopScanTb.setStatus("0");
 				shopScanTbMapper.insert(shopScanTb);
-				SellerTb sellerTb = sellerTbMapper.selectByPrimaryKey(map.get("key"));
+				SellerTb sellerTb = sellerTbMapper.selectByPrimaryKey(map.get("id"));
 				sellerTb.setStatus("2");
 				sellerTbMapper.updateByPrimaryKey(sellerTb);
 			}
