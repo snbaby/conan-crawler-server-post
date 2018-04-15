@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -36,6 +38,7 @@ import us.codecraft.webmagic.pipeline.CollectorPipeline;
 import us.codecraft.webmagic.pipeline.ResultItemsCollectorPipeline;
 
 @RestController
+@Component
 @RequestMapping("comment")
 public class CommentController {
 
@@ -56,12 +59,7 @@ public class CommentController {
 
 	@RequestMapping(value = "total-scan", method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<ResponseResult> postCommentScanTotalStart(@RequestParam("id") String id,
-			@RequestParam("key") String key, @RequestParam("value") String value) {
-		Map<String, String> map = new HashMap<>();
-		map.put("id", id);
-		map.put("key", key);
-		map.put("value", value);
+	public ResponseEntity<ResponseResult> postCommentScanTotalStart(@RequestBody Map<String, String> map) {
 		totalLinkedBlockingQueue.add(map);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
@@ -105,12 +103,7 @@ public class CommentController {
 
 	@RequestMapping(value = "detail-scan", method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<ResponseResult> postCommentScanDetailStart(@RequestParam("id") String id,
-			@RequestParam("key") String key, @RequestParam("value") String value) {
-		Map<String, String> map = new HashMap<>();
-		map.put("id", id);
-		map.put("key", key);
-		map.put("value", value);
+	public ResponseEntity<ResponseResult> postCommentScanDetailStart(@RequestBody Map<String, String> map) {
 		detailLinkedBlockingQueue.add(map);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}

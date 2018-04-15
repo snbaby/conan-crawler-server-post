@@ -8,13 +8,13 @@ import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -34,6 +34,7 @@ import us.codecraft.webmagic.pipeline.ResultItemsCollectorPipeline;
 
 @RestController
 @RequestMapping("shop")
+@Component
 public class ShopController {
 	private String phantomJsExePath = "/opt/phantomjs-2.1.1-linux-x86_64/bin/phantomjs";
 
@@ -49,12 +50,7 @@ public class ShopController {
 
 	@RequestMapping(value = "scan", method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<ResponseResult> postShopScanStart(@RequestParam("id") String id,
-			@RequestParam("key") String key, @RequestParam("value") String value) {
-		Map<String, String> map = new HashMap<>();
-		map.put("id", id);
-		map.put("key", key);
-		map.put("value", value);
+	public ResponseEntity<ResponseResult> postShopScanStart(@RequestBody Map<String, String> map) {
 		linkedBlockingQueue.add(map);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
