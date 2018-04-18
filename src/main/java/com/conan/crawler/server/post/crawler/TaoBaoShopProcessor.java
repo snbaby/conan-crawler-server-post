@@ -27,12 +27,15 @@ public class TaoBaoShopProcessor implements PageProcessor {
 		// TODO Auto-generated method stub
 		Html html = page.getHtml();
 		Selectable selectableTaobao = html.css("[href~=rate.taobao.com]", "href");
-		Selectable selectableTmall = html.css("#dsr-ratelink", "value");
+		Selectable selectableTmall = html.css("#mallLogo");
 		try {
 			if (selectableTmall.all().size() > 0) {// 天猫
 				String microscopeData = html.css("[name=microscope-data]", "content").toString();
 				String shop_id = microscopeData.split(";")[4].split("=")[1];
 				String shop_name = html.css("strong", "text").toString();
+				if(StringUtils.isEmpty(shop_name)) {
+					shop_name = html.css("a.slogo-shopname", "text").toString();
+				}
 				String seller_nick = StringUtils.isEmpty(html.css("[data-nick]", "data-nick").toString())
 						? html.css("[data-tnick]", "data-tnick").toString()
 						: html.css("[data-nick]", "data-nick").toString();
@@ -79,8 +82,19 @@ public class TaoBaoShopProcessor implements PageProcessor {
 					dsr_logi = html.css(".rateinfo em", "text").all().get(2);
 					shop_name = html.css(".shop-name .shop-name-link", "text").toString();
 				} else {
-					page.putField("shop_type", "-1");
-					return;
+					if(html.css(".shop-name .J_TGoldlog", "text").all().size()>0) {
+						shop_name = html.css(".shop-name .J_TGoldlog", "text").toString();
+					}else if(html.css("a.slogo-shopname", "text").all().size()>0) {
+						shop_name = html.css("a.slogo-shopname", "text").toString();
+					}else if(html.css(".shop-name .shop-name-link", "text").all().size()>0) {
+						shop_name = html.css(".shop-name .shop-name-link", "text").toString();
+					}else if(html.css("a.hCard", "text").all().size()>0) {
+						shop_name = html.css("a.hCard", "text").toString();
+					}else {
+						page.putField("shop_type", "-1");
+						return;
+					}
+					
 				}
 				page.putField("shop_type", "1");
 				page.putField("shop_id", shop_id);
